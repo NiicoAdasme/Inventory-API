@@ -9,13 +9,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CategoryServiceImp implements ICategoryService{
 
     @Autowired
     private ICategoryDao categoryDao;
+
     @Override
     @Transactional(readOnly = true)
     public ResponseEntity<CategoryResponseRest> search() {
@@ -30,6 +33,35 @@ public class CategoryServiceImp implements ICategoryService{
 
         }catch (Exception e){
             responseRest.setMetadata("Respuesta NO OK", "-1", "Error al consultar");
+            e.getStackTrace();
+            return new ResponseEntity<CategoryResponseRest>(responseRest, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<CategoryResponseRest>(responseRest, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<CategoryResponseRest> searchById(Long id) {
+
+        CategoryResponseRest responseRest = new CategoryResponseRest();
+        List<Category> list = new ArrayList<>();
+
+        try {
+
+            Optional<Category> category = categoryDao.findById(id);
+
+            if (category.isPresent()) {
+                list.add(category.get());
+                responseRest.getCategoryResponse().setCategories(list);
+                responseRest.setMetadata("Respuesta OK", "00", "Categoria encontrada");
+            } else {
+                responseRest.setMetadata("Respuesta NO OK", "-1", "Categoria no encontrada");
+                return new ResponseEntity<CategoryResponseRest>(responseRest, HttpStatus.NOT_FOUND);
+            }
+
+        }catch (Exception e){
+            responseRest.setMetadata("Respuesta NO OK", "-1", "Error al consultar por ID");
             e.getStackTrace();
             return new ResponseEntity<CategoryResponseRest>(responseRest, HttpStatus.INTERNAL_SERVER_ERROR);
         }
